@@ -1,0 +1,57 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+      POSTGRES_DB: inventory
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory -d inventory"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  cache:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: postgres:16-alpine
+    environment:
+      PGPASSWORD: inventory
+    volumes:
+      - ./migrations:/migrations:ro
+    command: >
+      sh -c "
+      for f in /migrations/*.sql; do
+        echo applying $$f;
+        psql -h db -U inventory -d inventory -v ON_ERROR_STOP=1 -f $$f || exit 1;
+      done;
+      echo migrations done
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://inventory:inventory@db:5432/inventory
+      REDIS_URL: redis://cache:6379
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      cache:
+        condition: service_healthy
+
+volumes:
+  pgdata:

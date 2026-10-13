@@ -1,16 +1,14 @@
 version: 2.1
 
 jobs:
-  build-and-test:
+  build:
     docker:
       - image: cimg/python:3.11
 
+    working_directory: ~/project
+
     steps:
       - checkout
-
-      - restore_cache:
-          keys:
-            - dependencies-{{ checksum "requirements.txt" }}
 
       - run:
           name: Install dependencies
@@ -18,17 +16,16 @@ jobs:
             python -m pip install --upgrade pip
             python -m pip install -r requirements.txt
 
-      - save_cache:
-          paths:
-            - ~/.cache/pip
-          key: dependencies-{{ checksum "requirements.txt" }}
+      - run:
+          name: Verify pytest installation
+          command: python -m pytest --version
 
       - run:
           name: Run tests
-          command: |
-            python -m pytest
+          command: python -m pytest -v
 
 workflows:
-  build-and-test:
+  version: 2
+  test:
     jobs:
-      - build-and-test
+      - build
