@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-alerts
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-alerts
+  template:
+    metadata:
+      labels:
+        app: inventory-alerts
+    spec:
+      containers:
+        - name: inventory-alerts
+          image: inventory-alerts-python-1-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
