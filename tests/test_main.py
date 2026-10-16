@@ -61,3 +61,7 @@ def test_suggested_order_qty():
         min_order=0,
         on_order=0,
     ) == 24
+
+
+def test_no_reorder_when_stock_is_sufficient():
+    assert needs_reorder(50, 20) is False
